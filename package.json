@@ -46,6 +46,11 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically open Claude Code when Cursor starts"
+        },
+        "cursorClaude.dangerousMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run Claude Code with --yes flag to automatically accept all changes (dangerous!)"
         }
       }
     }
