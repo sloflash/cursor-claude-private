@@ -36,11 +36,11 @@ jobs:
         
       - name: Prepare deployment files
         run: |
-          mkdir -p deploy
-          cp *.vsix deploy/
-          cp README.md deploy/ 2>/dev/null || echo "README.md not found, creating basic one"
-          if [ ! -f deploy/README.md ]; then
-            cat > deploy/README.md << 'EOF'
+          mkdir -p deploy/cursor-claude
+          cp *.vsix deploy/cursor-claude/
+          cp README.md deploy/cursor-claude/ 2>/dev/null || echo "README.md not found, creating basic one"
+          if [ ! -f deploy/cursor-claude/README.md ]; then
+            cat > deploy/cursor-claude/README.md << 'EOF'
           # Cursor Claude Auto-Open Extension
           
           A VS Code/Cursor extension that automatically opens Claude Code when you start Cursor with a project.
@@ -91,15 +91,25 @@ jobs:
           EOF
           fi
           
+      - name: Clone public repository
+        run: |
+          git clone https://github.com/sloflash/cursor-debug-spectacle-public.git public-repo
+          
+      - name: Update cursor-claude folder
+        run: |
+          # Remove old cursor-claude folder if it exists
+          rm -rf public-repo/cursor-claude
+          # Copy new files to cursor-claude folder
+          cp -r deploy/cursor-claude public-repo/
+          
       - name: Deploy to public repository
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          personal_token: ${{ secrets.DEPLOY_TOKEN }}
-          external_repository: sloflash/cursor-debug-spectacle-public
-          publish_dir: ./deploy
-          publish_branch: main
-          force_orphan: true
-          commit_message: "🚀 Deploy Cursor Claude v${{ github.ref_name }} - ${{ github.sha }}"
+        run: |
+          cd public-repo
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add cursor-claude/
+          git commit -m "🚀 Deploy Cursor Claude v${{ github.ref_name }} - ${{ github.sha }}" || echo "No changes to commit"
+          git push https://${{ secrets.DEPLOY_TOKEN }}@github.com/sloflash/cursor-debug-spectacle-public.git main
           
       - name: Create GitHub Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
