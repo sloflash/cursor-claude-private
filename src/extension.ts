@@ -6,16 +6,20 @@ export function activate(context: vscode.ExtensionContext) {
     const autoOpenClaudeCode = config.get<boolean>('autoOpenClaudeCode', true);
     
     if (autoOpenClaudeCode) {
-        // Try the official command first, then fallback to terminal
+        // Only open Claude Code if there's a workspace folder open (not on welcome page)
         setTimeout(async () => {
-            try {
-                await vscode.commands.executeCommand('claude-code.runClaude.keyboard');
-                console.log('✅ Successfully opened Claude Code via official command');
-            } catch (error) {
-                console.log('❌ Official command failed, using terminal fallback:', error);
-                const terminal = vscode.window.createTerminal('Claude Code');
-                terminal.sendText('claude');
-                terminal.show();
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                try {
+                    await vscode.commands.executeCommand('claude-code.runClaude.keyboard');
+                    console.log('✅ Successfully opened Claude Code via official command');
+                } catch (error) {
+                    console.log('❌ Official command failed, using terminal fallback:', error);
+                    const terminal = vscode.window.createTerminal('Claude Code');
+                    terminal.sendText('claude');
+                    terminal.show();
+                }
+            } else {
+                console.log('⏭️ Skipping Claude Code auto-open - no workspace folder detected');
             }
         }, 1000); // Small delay to ensure Cursor is fully loaded
     }
