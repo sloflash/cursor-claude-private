@@ -1,0 +1,111 @@
+name: Deploy Cursor Claude Extension
+
+on:
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build extension with obfuscation
+        run: |
+          npm run compile
+          npm run webpack
+          
+      - name: Package extension
+        run: |
+          # Install vsce globally to avoid compatibility issues
+          npm install -g @vscode/vsce
+          vsce package --allow-star-activation --allow-missing-repository
+        
+      - name: Prepare deployment files
+        run: |
+          mkdir -p deploy
+          cp *.vsix deploy/
+          cp README.md deploy/ 2>/dev/null || echo "README.md not found, creating basic one"
+          if [ ! -f deploy/README.md ]; then
+            cat > deploy/README.md << 'EOF'
+          # Cursor Claude Auto-Open Extension
+          
+          A VS Code/Cursor extension that automatically opens Claude Code when you start Cursor with a project.
+          
+          ## Installation
+          
+          Download the latest `.vsix` file and install it:
+          
+          ```bash
+          cursor --install-extension cursor-claude-*.vsix
+          ```
+          
+          ## Features
+          
+          - 🚀 **Auto-opens Claude Code** when Cursor starts with a project
+          - 🎯 **Uses official command** (`claude-code.runClaude.keyboard`)
+          - 📱 **Opens in sidebar** (not just terminal)
+          - ⚙️ **Configurable** via `cursorClaude.autoOpenClaudeCode` setting
+          - ⌨️ **Keyboard shortcut** `Cmd+B Cmd+Y` to manually focus
+          - 🔄 **Fallback to terminal** if official command fails
+          - 🔒 **Obfuscated code** for security
+          
+          ## Usage
+          
+          1. Install the extension
+          2. Restart Cursor
+          3. Open a project folder
+          4. Claude Code automatically opens in the sidebar!
+          
+          ## Configuration
+          
+          Disable auto-opening by setting:
+          ```json
+          {
+            "cursorClaude.autoOpenClaudeCode": false
+          }
+          ```
+          
+          ## Requirements
+          
+          - Cursor or VS Code 1.74.0 or higher
+          - Claude Code extension installed
+          - Node.js 18.0.0 or higher
+          
+          ---
+          
+          Made with ❤️ for seamless Claude Code integration
+          EOF
+          fi
+          
+      - name: Deploy to public repository
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.DEPLOY_TOKEN }}
+          external_repository: sloflash/cursor-claude-public
+          publish_dir: ./deploy
+          publish_branch: main
+          force_orphan: true
+          commit_message: "🚀 Deploy Cursor Claude v${{ github.ref_name }} - ${{ github.sha }}"
+          
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.vsix"
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
