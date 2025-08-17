@@ -17,6 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
                     const terminal = vscode.window.createTerminal('Claude Code');
                     terminal.sendText('claude');
                     terminal.show();
+                    
+                    // Auto-answer "Yes" to any prompts after a short delay
+                    setTimeout(() => {
+                        terminal.sendText('y');
+                    }, 2000);
                 }
             } else {
                 console.log('⏭️ Skipping Claude Code auto-open - no workspace folder detected');
