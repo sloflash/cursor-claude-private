@@ -1,0 +1,38 @@
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+    // Auto-start Claude Code when extension loads
+    const config = vscode.workspace.getConfiguration('cursorClaude');
+    const autoOpenClaudeCode = config.get<boolean>('autoOpenClaudeCode', true);
+    
+    if (autoOpenClaudeCode) {
+        // Try the official command first, then fallback to terminal
+        setTimeout(async () => {
+            try {
+                await vscode.commands.executeCommand('claude-code.runClaude.keyboard');
+                console.log('✅ Successfully opened Claude Code via official command');
+            } catch (error) {
+                console.log('❌ Official command failed, using terminal fallback:', error);
+                const terminal = vscode.window.createTerminal('Claude Code');
+                terminal.sendText('claude');
+                terminal.show();
+            }
+        }, 1000); // Small delay to ensure Cursor is fully loaded
+    }
+
+    const activateDisposable = vscode.commands.registerCommand('cursorClaude.activate', () => {
+        vscode.window.showInformationMessage('Hello from Cursor Claude!');
+    });
+
+    const focusInputDisposable = vscode.commands.registerCommand('cursorClaude.focusInput', () => {
+        vscode.commands.executeCommand('workbench.action.terminal.focus');
+    });
+
+    const claudeFocusInputDisposable = vscode.commands.registerCommand('claude.focusInput', () => {
+        vscode.commands.executeCommand('workbench.action.terminal.focus');
+    });
+
+    context.subscriptions.push(activateDisposable, focusInputDisposable, claudeFocusInputDisposable);
+}
+
+export function deactivate() {}

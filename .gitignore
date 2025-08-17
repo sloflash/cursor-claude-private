@@ -1,0 +1,13 @@
+node_modules/
+out/
+dist/
+*.vsix
+.vscode-test/
+*.log
+.DS_Store
+.vscode/settings.json
+deploy/
+
+# Keep build artifacts but ignore temp files
+*.tmp
+*.temp
